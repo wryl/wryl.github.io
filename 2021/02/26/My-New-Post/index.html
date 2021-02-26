@@ -8,15 +8,15 @@
   <link rel="dns-prefetch" href="http://example.com">
   <title>发布项目时遇到的各式问题 | 技术分享</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="留下记录">
+  <meta name="description" content="历时两个月,终于将日麻跑起来了.这过程中遇到了很多问题.趁着还没忘记.做个备份  il2cpp打包运行时报错Unity&#x2F;Assets&#x2F;ModelView&#x2F;MonoBehaviour&#x2F;Init.cs&#96; foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies()) &amp;#123;     &#x2F;&#x2F;这里原本采用 assembly.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="发布项目时遇到的各式问题">
 <meta property="og:url" content="http://example.com/2021/02/26/My-New-Post/index.html">
 <meta property="og:site_name" content="技术分享">
-<meta property="og:description" content="留下记录">
+<meta property="og:description" content="历时两个月,终于将日麻跑起来了.这过程中遇到了很多问题.趁着还没忘记.做个备份  il2cpp打包运行时报错Unity&#x2F;Assets&#x2F;ModelView&#x2F;MonoBehaviour&#x2F;Init.cs&#96; foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies()) &amp;#123;     &#x2F;&#x2F;这里原本采用 assembly.">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2021-02-26T02:59:44.000Z">
-<meta property="article:modified_time" content="2021-02-26T03:18:08.301Z">
+<meta property="article:modified_time" content="2021-02-26T08:12:20.825Z">
 <meta property="article:author" content="Wang Rui">
 <meta name="twitter:card" content="summary">
   
@@ -180,7 +180,29 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>留下记录</p>
+        <p>历时两个月,终于将日麻跑起来了.这过程中遇到了很多问题.趁着还没忘记.做个备份</p>
+<hr>
+<h2 id="il2cpp打包"><a href="#il2cpp打包" class="headerlink" title="il2cpp打包"></a>il2cpp打包</h2><h3 id="运行时报错"><a href="#运行时报错" class="headerlink" title="运行时报错"></a>运行时报错</h3><p>Unity/Assets/ModelView/MonoBehaviour/Init.cs<br>`</p>
+<pre><code>foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+&#123;
+    //这里原本采用 assembly.ManifestModule.Name,但是运行时会报错.故改为FullName
+    string assemblyName = assembly.FullName;
+    if (!assemblyNames.Contains(assemblyName.Split(&#39;,&#39;)[0]))
+    &#123;
+        continue;
+    &#125;
+    Game.EventSystem.Add(assembly);
+&#125;
+</code></pre>
+<p>`</p>
+<p>more</p>
+<h3 id="mongo-bson解析出错"><a href="#mongo-bson解析出错" class="headerlink" title="mongo bson解析出错"></a>mongo bson解析出错</h3><p>同样的,在打完包后bson解析会有不支持的情况.而这些都是不会在编辑器模式发生的错误.所以在打包前关闭客户端所有有可能用到bson的地方.</p>
+<p>在实践中发现如果序列化不统一.就容易出现问题.所以后续ET版本删除了客户端BSON.统一采用pb-net是非常务实的一个选择</p>
+<hr>
+<h2 id="服务端问题"><a href="#服务端问题" class="headerlink" title="服务端问题"></a>服务端问题</h2><p>这里面有不少老朋友.这次一并解决了</p>
+<h3 id="绑定公网ip问题"><a href="#绑定公网ip问题" class="headerlink" title="绑定公网ip问题"></a>绑定公网ip问题</h3><p>这是StartMachineConfig配置中的一条.{“_id”:1,”InnerIP”:”127.0.0.1”,”OuterIP”:”127.0.0.1”}.我们使用OuterIP作为gate暴露给客户端的地址.但是同时代码中也是socket绑定地址.在云服务器环境中这往往绑定不上.所以代码中强制修改为绑定0.0.0.0,而配置只是发送给客户端连接用.临时解决这个问题</p>
+<h3 id="Model层无法发送actor消息"><a href="#Model层无法发送actor消息" class="headerlink" title="Model层无法发送actor消息"></a>Model层无法发送actor消息</h3><p>因为偷懒缝合别人代码的原因.方法定义在model层.然而只有hotfix层才能发.这时候只能通过发布事件来处理了</p>
+<p><code>  Game.EventSystem.Publish( new EventType.MessageBroadCast() &#123;actorIds= GetParent&lt;MJRoomComponent&gt;().AllPlayerActorids, actorMessage = new M2C_EnterMahjoneGame() &#125;).Coroutine();</code></p>
 
       
 
